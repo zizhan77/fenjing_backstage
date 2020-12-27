@@ -1,0 +1,145 @@
+<template>
+  <!-- 主办方列表 -->
+  <section class="sponsor-list page_main">
+    <section class="page_card page_card_padding">
+      <form-title>{{$route.name}}</form-title>
+      <el-button class="btn_small mb10 fr" type="primary" @click="hadnleAdd">新增主办方</el-button>
+      <template-table
+        v-loading="loading"
+        :table-list="tableList"
+        :table-column="tableColumn"
+        :table-btns="tableBtns"
+        :operationBtnWidth="220"
+        @handleEvent="handleEvent"
+      ></template-table>
+      <template-page :pagination-init="pageInit" @change="handleChange"></template-page>
+    </section>
+  </section>
+</template>
+<script>
+import Message from '@utils/message';
+import API from '@api/organizer';
+
+export default {
+  data() {
+    return {
+      loading: false,
+      tableColumn: [
+        {
+          label: '手机号码',
+          name: 'phone'
+        },
+        {
+          label: '主办方名称',
+          name: 'name'
+        },
+        {
+          label: '负责人姓名',
+          name: 'chargeName'
+        },
+        {
+          label: '主办方状态',
+          name: 'status',
+          render(h, { row }) {
+            return <span>{row.status==2 ? '冻结中' : '启用中'}</span>;
+          }
+        },
+        {
+          label: '创建时间',
+          name: 'createTime'
+        }
+      ],
+      tableBtns: [
+        {
+          label: '信息修改',
+          role: 'edit'
+        }
+        // {
+        //   label: '冻结账户',
+        //   role: 'freeze'
+        // }
+      ],
+      tableList: [],
+      pageInit: {
+        page: 1,
+        pageSize: 20,
+        total: 0
+      },
+      searchForm: {}
+    };
+  },
+  computed: {
+    searchData() {
+      return [
+        {
+          label: '手机号:',
+          name: 'phoneNum',
+          type: 'text',
+          value: ''
+        },
+        {
+          label: '用户状态:',
+          name: 'userStatus',
+          type: 'select',
+          value: '',
+          options: [
+            {
+              label: '全部',
+              value: ''
+            },
+            {
+              label: '正常',
+              value: 1
+            },
+            {
+              label: '冻结中',
+              value: 2
+            }
+          ]
+        }
+      ];
+    }
+  },
+  methods: {
+    handleChange(val) {
+      this.pageInit.page = val;
+      this.queryTableList();
+    },
+    handleEvent(row, role, index) {
+      switch (role) {
+        case 'edit':
+          this.$router.push({
+            name: '主办方配置',
+            params: {
+              userId: row.id
+            }
+          });
+          break;
+        case 'freeze':
+          Message.confirm('冻结提示', '确定冻结该账户？', () => {});
+          break;
+        default:
+          break;
+      }
+    },
+    hadnleAdd(){
+      this.$router.push({
+        name: '主办方配置'
+      });
+    },
+    queryTableList(){
+      this.loading = true;
+      this.$service.post(API.sponsorList, { page: this.pageInit.page, limit: this.pageInit.pageSize }).then(res => {
+        console.log("主办方列表：",res.data)
+        this.loading = false;
+        if (res && res.data.length) {
+          this.tableList = res.data;
+        }
+      });
+    }
+  },
+  created(){
+    this.queryTableList();
+  }
+};
+</script>
